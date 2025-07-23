@@ -2,13 +2,14 @@ import json
 import os
 import time
 from multiprocessing import Pool
+import pickle
 from mpmath import mp, mpf, fac, sqrt
 
 # === 配置参数 ===
 SAVE_INTERVAL_SECONDS = 30          # 保存周期（秒）
 PRECISION = 10_000_000              # π 小数精度（位数）
 PROGRESS_FILE = "progress.json"     # 当前项数文件
-SUM_FILE = "pi_sum.txt"             # 当前总和文件
+SUM_FILE = "pi_sum.pkl"             # 当前总和文件（改为 .pkl）
 PI_VALUE_FILE = "pi_value.txt"      # 当前 π 值文件
 CORES = 3                           # 使用核心数
 TERMS_PER_BATCH = 10                # 每轮计算项数
@@ -34,8 +35,8 @@ def get_saved_progress():
         with open(PROGRESS_FILE, "r") as f:
             k = json.load(f).get("k", 0)
     if os.path.exists(SUM_FILE):
-        with open(SUM_FILE, "r") as f:
-            total = mpf(f.read().strip())
+        with open(SUM_FILE, "rb") as f:
+            total = pickle.load(f)
     return k, total
 
 # === 批量计算多个项 ===
@@ -68,17 +69,17 @@ def compute_pi():
 
             print(f"[{time.strftime('%H:%M:%S')}] 已计算 {k} 项，π ≈ {pi_short}")
 
-            # 保存 pi
+            # 保存 pi（文本保存）
             with open(PI_VALUE_FILE, "w") as f:
                 f.write(str(pi_val))
 
-            # 保存进度
+            # 保存进度（文本保存）
             with open(PROGRESS_FILE, "w") as f:
                 json.dump({"k": k}, f)
 
-            # 保存总和
-            with open(SUM_FILE, "w") as f:
-                f.write(str(total))
+            # 保存总和（改为二进制pickle保存）
+            with open(SUM_FILE, "wb") as f:
+                pickle.dump(total, f)
 
             last_save = time.time()
 
