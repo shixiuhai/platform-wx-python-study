@@ -3,16 +3,16 @@ import os
 import time
 from multiprocessing import Pool, cpu_count
 import pickle
-from mpmath import mp, mpf, fac, sqrt
+from mpmath import mp, mpf, sqrt
 
 # === 配置参数 ===
-SAVE_INTERVAL_SECONDS = 120         # 保存周期（秒）
+SAVE_INTERVAL_SECONDS = 60          # 保存周期（秒）
 PRECISION = 1_000_000               # π 小数精度（位数）
 PROGRESS_FILE = "progress.json"     # 当前项数文件
-SUM_FILE = "pi_sum.pkl"             # 当前总和文件（改为 .pkl）
+SUM_FILE = "pi_sum.pkl"             # 当前总和文件（pickle）
 PI_VALUE_FILE = "pi_value.txt"      # 当前 π 值文件
-CORES = cpu_count()-1                 # 自动获取CPU核心数
-TERMS_PER_BATCH = 1000              # 每轮计算总项数（必须能被CORES整除）
+CORES = max(cpu_count() - 1, 1)      # 自动获取CPU核心数，至少1核
+TERMS_PER_BATCH = 900               # 每轮计算总项数（必须能被CORES整除）
 
 # 校验 TERMS_PER_BATCH 是否能被 CORES 整除
 if TERMS_PER_BATCH % CORES != 0:
@@ -24,12 +24,36 @@ mp.dps = PRECISION + 100  # 多预留位数，避免精度损失
 # Chudnovsky 常数系数
 C = 426880 * sqrt(mpf(10005))
 
-# === 单项计算 ===
-def chudnovsky_term(k):
-    k = mpf(k)
-    numerator = (-1) ** int(k) * fac(6 * int(k)) * (13591409 + 545140134 * k)
-    denominator = fac(3 * int(k)) * (fac(int(k)) ** 3) * (640320 ** (3 * k))
-    return numerator / denominator
+# === 使用递推计算 Chudnovsky 单项和区间和 ===
+def chudnovsky_term_recursive(start_k, end_k):
+    """
+    使用递推方式计算区间[start_k, end_k)的Chudnovsky项和。
+    递推关系：
+    a_0 = 1
+    a_(k+1) = a_k * (- (6k+1)(2k+1)(6k+5)) / ((k+1)^3 * 640320^3)
+    每项为 a_k * (13591409 + 545140134k)
+    """
+    total = mpf(0)
+    k = mpf(start_k)
+    # 初始化递推参数
+    # 先计算a_0，再递推至start_k
+    a = mpf(1)
+    for i in range(int(start_k)):
+        i_mpf = mpf(i)
+        numerator = -(6*i_mpf + 1)*(2*i_mpf + 1)*(6*i_mpf + 5)
+        denominator = ((i_mpf + 1)**3) * (640320**3)
+        a = a * numerator / denominator
+
+    for i in range(int(start_k), int(end_k)):
+        k = mpf(i)
+        term = a * (13591409 + 545140134 * k)
+        total += term
+        # 递推下一项a
+        numerator = -(6*k + 1)*(2*k + 1)*(6*k + 5)
+        denominator = ((k + 1)**3) * (640320**3)
+        a = a * numerator / denominator
+
+    return total
 
 # === 读取保存进度 ===
 def get_saved_progress():
@@ -43,13 +67,10 @@ def get_saved_progress():
             total = pickle.load(f)
     return k, total
 
-# === 批量计算多个项 ===
-def compute_terms(start_k, end_k):
-    # 计算从 start_k 到 end_k -1 项的和
-    s = mpf(0)
-    for i in range(start_k, end_k):
-        s += chudnovsky_term(i)
-    return s
+# === 计算单个批次 ===
+def compute_batch(start_k, batch_size):
+    # 计算[start_k, start_k + batch_size)的Chudnovsky项和
+    return chudnovsky_term_recursive(start_k, start_k + batch_size)
 
 # === 主计算函数 ===
 def compute_pi():
@@ -61,9 +82,12 @@ def compute_pi():
 
     with Pool(CORES) as pool:
         while True:
-            batches = [(k + i * batch_size, k + (i + 1) * batch_size) for i in range(CORES)]
+            # 构造每核计算区间
+            batches = [(k + i * batch_size, batch_size) for i in range(CORES)]
 
-            results = pool.starmap(compute_terms, batches)
+            # 并行计算
+            results = pool.starmap(compute_batch, batches)
+
             batch_sum = sum(results)
             total += batch_sum
 
