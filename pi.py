@@ -6,7 +6,7 @@ from multiprocessing import Pool
 
 # === 配置参数 ===
 SAVE_INTERVAL_SECONDS = 30         # 每隔多少秒保存和打印一次
-PRECISION = 10000000               # π 精度（小数点后位数）
+PRECISION = 1000000                # π 精度（小数点后位数）
 PROGRESS_FILE = "progress.json"    # 保存当前进度（第几项）
 SUM_FILE = "pi_sum.txt"            # 保存当前累加和（Chudnovsky总和）
 PI_VALUE_FILE = "pi_value.txt"     # ✅ 保存当前 π 值
