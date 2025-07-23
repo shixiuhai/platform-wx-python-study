@@ -6,7 +6,7 @@ import pickle
 from mpmath import mp, mpf, fac, sqrt
 
 # === 配置参数 ===
-SAVE_INTERVAL_SECONDS = 30          # 保存周期（秒）
+SAVE_INTERVAL_SECONDS = 120         # 保存周期（秒）
 PRECISION = 10_000_000              # π 小数精度（位数）
 PROGRESS_FILE = "progress.json"     # 当前项数文件
 SUM_FILE = "pi_sum.pkl"             # 当前总和文件（改为 .pkl）
