@@ -5,14 +5,23 @@ import pickle
 from multiprocessing import Pool, cpu_count
 from mpmath import mp, mpf, sqrt
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] %(message)s',
-    datefmt='%H:%M:%S',
-    filename='out.log',    # 指定日志文件
-    filemode='a',          # 追加模式（默认也是'a'，可以省略）
-    encoding='utf-8'       # 指定编码，推荐写上避免乱码
-)
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('[%(asctime)s] %(message)s', datefmt='%H:%M:%S')
+
+# 文件日志处理器
+file_handler = logging.FileHandler('out.log', encoding='utf-8')
+file_handler.setFormatter(formatter)
+
+# 终端日志处理器
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+
+# 添加处理器
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 
 # === 配置参数 ===
