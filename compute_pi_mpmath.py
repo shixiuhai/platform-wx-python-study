@@ -6,7 +6,7 @@ from multiprocessing import Pool, cpu_count
 from mpmath import mp, mpf, sqrt
 
 # === 配置参数 ===
-SAVE_INTERVAL_SECONDS = 60            # 保存周期（秒）
+SAVE_INTERVAL_SECONDS = 300           # 保存周期（秒）
 PRECISION = 5_000_000                 # π 小数精度（位数）
 PROGRESS_FILE = "progress.json"       # 当前项数文件
 SUM_FILE = "pi_sum.pkl"               # 当前总和文件（pickle）
