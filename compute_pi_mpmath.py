@@ -4,6 +4,13 @@ import time
 import pickle
 from multiprocessing import Pool, cpu_count
 from mpmath import mp, mpf, sqrt
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(message)s',
+    datefmt='%H:%M:%S'
+)
+
 
 # === 配置参数 ===
 SAVE_INTERVAL_SECONDS = 300           # 保存周期（秒）
@@ -67,8 +74,8 @@ def compute_batch(start_k, batch_size):
 # === 主计算函数 ===
 def compute_pi():
     k, total = get_saved_progress()
-    print(f"▶ 从第 {k} 项开始，目标精度 {PRECISION} 位，使用 {CORES} 核心")
-    print(f"🔄 已恢复进度：k = {k}，当前总和估值略大于 π ≈ {str(C / total)[:14] if k else '未知'}")
+    logging.info(f"▶ 从第 {k} 项开始，目标精度 {PRECISION} 位，使用 {CORES} 核心")
+    logging.info(f"🔄 已恢复进度：k = {k}，当前总和估值略大于 π ≈ {str(C / total)[:14] if k else '未知'}")
 
     last_save = time.time()
     batch_size = TERMS_PER_BATCH // CORES
@@ -86,7 +93,7 @@ def compute_pi():
                     pi_val = C / total
                     pi_preview = str(pi_val)[:14]
 
-                    print(f"[{time.strftime('%H:%M:%S')}] 已计算 {k} 项，π ≈ {pi_preview}")
+                    logging.info(f"[{time.strftime('%H:%M:%S')}] 已计算 {k} 项，π ≈ {pi_preview}")
 
                     # 保存 π 值（文本）
                     with open(PI_VALUE_FILE, "w") as f:
@@ -103,12 +110,12 @@ def compute_pi():
                     last_save = time.time()
 
     except KeyboardInterrupt:
-        print("\n🛑 用户中断，正在保存最后进度...")
+        logging.info("\n🛑 用户中断，正在保存最后进度...")
         with open(PROGRESS_FILE, "w") as f:
             json.dump({"k": k}, f)
         with open(SUM_FILE, "wb") as f:
             pickle.dump(total, f)
-        print("✅ 已保存退出，建议稍后继续计算。")
+        logging.info("✅ 已保存退出，建议稍后继续计算。")
 
 if __name__ == "__main__":
     compute_pi()
