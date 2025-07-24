@@ -8,7 +8,10 @@ import logging
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(message)s',
-    datefmt='%H:%M:%S'
+    datefmt='%H:%M:%S',
+    filename='out.log',    # 指定日志文件
+    filemode='a',          # 追加模式（默认也是'a'，可以省略）
+    encoding='utf-8'       # 指定编码，推荐写上避免乱码
 )
 
 
